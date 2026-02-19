@@ -5,9 +5,7 @@
     @click="$emit('click')"
   >
     <!-- Pawn -->
-    <div v-if="pawn" class="pawn" :class="pawn">
-      <v-icon :color="pawn === 'white' ? '#eeeeee' : '#4a148c'" size="32">mdi-chess-pawn</v-icon>
-    </div>
+    <div v-if="pawn !== 'empty'" class="pawn" :class="pawn" />
 
     <!-- Highlight indicator dot -->
     <div v-else-if="highlight !== 'none'" class="highlight-dot" :class="highlight" />
@@ -74,8 +72,8 @@ const isClickable = computed(() =>
   transition: transform 0.15s;
 }
 .pawn:hover { transform: scale(1.1); }
-.pawn.white { background: rgba(200,200,200,0.3); }
-.pawn.black { background: rgba(40,0,80,0.3); }
+.pawn.white { background: #f5f5f5; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+.pawn.black { background: #1a1a1a; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 
 .highlight-dot {
   width: 30%;
