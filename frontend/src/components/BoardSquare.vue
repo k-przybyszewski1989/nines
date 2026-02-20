@@ -1,7 +1,7 @@
 <template>
   <div
     class="board-square"
-    :class="[squareColor, highlightClass, { 'cursor-pointer': isClickable }]"
+    :class="[squareColor, highlightClass, { 'cursor-pointer': isClickable, 'sq-last-ai': isLastAiMove && highlight === 'none' }]"
     @click="$emit('click')"
   >
     <!-- Pawn -->
@@ -20,6 +20,7 @@ const props = defineProps<{
   row: number
   pawn: 'white' | 'black' | 'empty'
   highlight: 'none' | 'selected' | 'step' | 'hop'
+  isLastAiMove: boolean
 }>()
 
 defineEmits<{
@@ -56,9 +57,10 @@ const isClickable = computed(() =>
 .sq-light { background-color: #f0d9b5; }
 .sq-dark  { background-color: #b58863; }
 
-.sq-selected { background-color: #f6f669 !important; }
-.sq-step     { background-color: #7fc97f !important; }
-.sq-hop      { background-color: #7bb8e8 !important; }
+.sq-selected  { background-color: #f6f669 !important; }
+.sq-step      { background-color: #7fc97f !important; }
+.sq-hop       { background-color: #7bb8e8 !important; }
+.sq-last-ai   { background-color: #c084fc !important; }
 
 .cursor-pointer { cursor: pointer; }
 

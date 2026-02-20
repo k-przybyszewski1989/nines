@@ -33,6 +33,7 @@
             :selected-pawn="gameStore.selectedPawn"
             :current-path="gameStore.currentPath"
             :valid-paths="gameStore.validPaths"
+            :last-ai-squares="gameStore.lastAISquares"
             @pawn-selected="onPawnSelected"
             @move-commit="onMoveCommit"
             @path-extended="onPathExtended"

@@ -18,6 +18,7 @@
           :row="7 - (r - 1)"
           :pawn="cellPawn(c - 1, 7 - (r - 1))"
           :highlight="cellHighlight(c - 1, 7 - (r - 1))"
+          :is-last-ai-move="props.lastAiSquares.includes(posStr(c - 1, 7 - (r - 1)))"
           @click="onSquareClick(c - 1, 7 - (r - 1))"
         />
       </template>
@@ -48,6 +49,7 @@ const props = defineProps<{
   selectedPawn: string | null
   currentPath: string[]
   validPaths: string[][]
+  lastAiSquares: string[]
 }>()
 
 const emit = defineEmits<{
@@ -267,8 +269,8 @@ function commitMove() {
   display: grid;
   grid-template-columns: 24px repeat(8, 1fr);
   grid-template-rows: 24px repeat(8, 1fr);
-  width: min(80vw, 560px);
-  height: min(80vw, 560px);
+  width: min(90vw, 640px);
+  height: min(90vw, 640px);
   border: 2px solid #555;
   border-radius: 4px;
   overflow: hidden;
