@@ -34,12 +34,16 @@ services:
       - "8080:8080"
 
   frontend:
-    build: ./frontend
-    restart: unless-stopped
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     ports:
-      - "8090:80"
+      - "8090:5173"
 
 volumes:
   db_data:
