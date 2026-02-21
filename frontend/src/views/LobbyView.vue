@@ -36,7 +36,7 @@
               </v-tab>
             </v-tabs>
 
-            <v-window v-model="tab">
+            <v-window v-model="tab" class="tab-container">
               <!-- Create Room -->
               <v-window-item value="create">
                 <v-text-field
@@ -174,3 +174,7 @@ async function joinRoom() {
   }
 }
 </script>
+
+<style scoped>
+.tab-container { padding-top: 13px; }
+</style>

@@ -82,7 +82,7 @@
             <!-- White player (bottom) -->
             <PlayerInfo
               class="mt-3"
-              :name="playerStore.nickname"
+              :name="gameStore.state?.white_nick || playerStore.nickname"
               color="white"
               :move-count="playerStore.moveCount"
               :is-active="gameStore.turn === 'white'"

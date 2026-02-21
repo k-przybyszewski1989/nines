@@ -68,7 +68,7 @@ const isClickable = computed(() =>
 .sq-selected  { background-color: #f6f669 !important; }
 .sq-step      { background-color: #7fc97f !important; }
 .sq-hop       { background-color: #7bb8e8 !important; }
-.sq-last-ai   { background-color: #c084fc !important; }
+.sq-last-ai   { opacity: 0.45; }
 
 .cursor-pointer { cursor: pointer; }
 
