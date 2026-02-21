@@ -76,15 +76,38 @@ type GameState struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 }
 
-// CreateGame inserts a new game row and returns its ID.
-func CreateGame(database *sqlx.DB, id, mode, whiteNick string, aiLevel sql.NullString, b game.Board) error {
+// CreateGame inserts a new game row.
+func CreateGame(database *sqlx.DB, id, mode, whiteNick string, aiLevel, roomCode sql.NullString, b game.Board) error {
 	boardJSON, err := json.Marshal(b)
 	if err != nil {
 		return fmt.Errorf("marshal board: %w", err)
 	}
+	status := "in_progress"
+	if mode == "multiplayer" {
+		status = "waiting"
+	}
 	_, err = database.Exec(
-		`INSERT INTO games (id, mode, status, white_nick, ai_level, turn, board) VALUES (?,?,?,?,?,?,?)`,
-		id, mode, "in_progress", whiteNick, aiLevel, "white", boardJSON,
+		`INSERT INTO games (id, mode, status, room_code, white_nick, ai_level, turn, board) VALUES (?,?,?,?,?,?,?,?)`,
+		id, mode, status, roomCode, whiteNick, aiLevel, "white", boardJSON,
+	)
+	return err
+}
+
+// GetGameByRoomCode retrieves a game by its room code.
+func GetGameByRoomCode(database *sqlx.DB, roomCode string) (*GameState, error) {
+	var row GameRow
+	err := database.Get(&row, `SELECT * FROM games WHERE room_code = ?`, roomCode)
+	if err != nil {
+		return nil, fmt.Errorf("get game by room code %s: %w", roomCode, err)
+	}
+	return row.ToGameState()
+}
+
+// JoinGame sets the black player's nickname and sets status to in_progress.
+func JoinGame(database *sqlx.DB, id, blackNick string) error {
+	_, err := database.Exec(
+		`UPDATE games SET black_nick=?, status='in_progress' WHERE id=?`,
+		blackNick, id,
 	)
 	return err
 }

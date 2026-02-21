@@ -36,10 +36,11 @@
                 color="secondary"
                 size="large"
                 variant="outlined"
-                disabled
+                :disabled="!nickname.trim()"
+                @click="goMultiplayer"
               >
                 <v-icon start>mdi-account-multiple</v-icon>
-                Multiplayer (Phase 2)
+                Multiplayer
               </v-btn>
             </template>
 
@@ -102,6 +103,11 @@ const step = ref<'mode' | 'difficulty'>('mode')
 const aiLevel = ref('')
 const loading = ref(false)
 const error = ref('')
+
+function goMultiplayer() {
+  if (!nickname.value.trim()) return
+  router.push({ name: 'lobby', query: { nickname: nickname.value.trim() } })
+}
 
 async function startGame(level: string) {
   if (!nickname.value.trim()) return

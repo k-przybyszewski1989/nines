@@ -14,56 +14,70 @@
         </v-alert>
 
         <template v-else-if="gameStore.state">
-          <!-- Black player (top) -->
-          <PlayerInfo
-            class="mb-3"
-            :name="gameStore.state.black_nick || 'AI'"
-            color="black"
-            :move-count="blackMoves"
-            :is-active="gameStore.turn === 'black'"
-          />
+          <!-- Waiting for opponent (multiplayer only) -->
+          <template v-if="gameStore.status === 'waiting'">
+            <v-card class="text-center pa-8 mb-4">
+              <div class="text-h6 mb-3">Waiting for opponent...</div>
+              <div class="text-subtitle-2 mb-2">Share this room code:</div>
+              <div class="text-h3 font-weight-bold mb-4" style="letter-spacing: 0.2em">
+                {{ gameStore.state.room_code }}
+              </div>
+              <v-progress-circular indeterminate color="primary" />
+            </v-card>
+          </template>
 
-          <!-- Board -->
-          <GameBoard
-            class="my-2"
-            :board="gameStore.board!"
-            :player-color="playerStore.color as 'white' | 'black'"
-            :is-my-turn="gameStore.turn === 'white' && gameStore.status === 'in_progress'"
-            :game-status="gameStore.status"
-            :selected-pawn="gameStore.selectedPawn"
-            :current-path="gameStore.currentPath"
-            :valid-paths="gameStore.validPaths"
-            :last-ai-squares="gameStore.lastAISquares"
-            @pawn-selected="onPawnSelected"
-            @move-commit="onMoveCommit"
-            @path-extended="onPathExtended"
-          />
+          <template v-else>
+            <!-- Black player (top) -->
+            <PlayerInfo
+              class="mb-3"
+              :name="blackDisplayName"
+              color="black"
+              :move-count="blackMoves"
+              :is-active="gameStore.turn === 'black'"
+            />
 
-          <!-- White player (bottom) -->
-          <PlayerInfo
-            class="mt-3"
-            :name="playerStore.nickname"
-            color="white"
-            :move-count="playerStore.moveCount"
-            :is-active="gameStore.turn === 'white'"
-          />
+            <!-- Board -->
+            <GameBoard
+              class="my-2"
+              :board="gameStore.board!"
+              :player-color="playerStore.color as 'white' | 'black'"
+              :is-my-turn="isMyTurn"
+              :game-status="gameStore.status"
+              :selected-pawn="gameStore.selectedPawn"
+              :current-path="gameStore.currentPath"
+              :valid-paths="gameStore.validPaths"
+              :last-ai-squares="gameStore.lastAISquares"
+              @pawn-selected="onPawnSelected"
+              @move-commit="onMoveCommit"
+              @path-extended="onPathExtended"
+            />
 
-          <!-- Status / turn indicator -->
-          <v-row class="mt-3" justify="center">
-            <v-col cols="auto">
-              <v-chip
-                v-if="gameStore.status === 'in_progress'"
-                :color="gameStore.turn === 'white' ? 'white' : 'deep-purple'"
-                size="large"
-              >
-                {{ gameStore.turn === 'white' ? 'Your turn' : 'AI thinking…' }}
-              </v-chip>
-            </v-col>
-          </v-row>
+            <!-- White player (bottom) -->
+            <PlayerInfo
+              class="mt-3"
+              :name="playerStore.nickname"
+              color="white"
+              :move-count="playerStore.moveCount"
+              :is-active="gameStore.turn === 'white'"
+            />
 
-          <v-alert v-if="gameStore.error" type="warning" class="mt-3" closable @click:close="gameStore.error = ''">
-            {{ gameStore.error }}
-          </v-alert>
+            <!-- Status / turn indicator -->
+            <v-row class="mt-3" justify="center">
+              <v-col cols="auto">
+                <v-chip
+                  v-if="gameStore.status === 'in_progress'"
+                  :color="gameStore.turn === 'white' ? 'white' : 'deep-purple'"
+                  size="large"
+                >
+                  {{ turnLabel }}
+                </v-chip>
+              </v-col>
+            </v-row>
+
+            <v-alert v-if="gameStore.error" type="warning" class="mt-3" closable @click:close="gameStore.error = ''">
+              {{ gameStore.error }}
+            </v-alert>
+          </template>
         </template>
 
       </v-col>
@@ -74,13 +88,13 @@
       v-if="gameStore.state"
       :winner="gameStore.winner"
       :white-nick="gameStore.state.white_nick"
-      :black-nick="gameStore.state.black_nick || 'AI'"
+      :black-nick="blackDisplayName"
     />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import GameBoard from '@/components/GameBoard.vue'
 import PlayerInfo from '@/components/PlayerInfo.vue'
@@ -93,21 +107,52 @@ const gameStore = useGameStore()
 const playerStore = usePlayerStore()
 
 const gameId = computed(() => route.params.id as string)
+const myColor = computed(() => (route.query.color as string || 'white') as 'white' | 'black')
 
-// Count moves from move_num split between players (human = white moves = ceil(move_num/2)).
+const blackDisplayName = computed(() => {
+  if (!gameStore.state) return 'AI'
+  if (gameStore.state.mode === 'multiplayer') {
+    return gameStore.state.black_nick || 'Waiting...'
+  }
+  return gameStore.state.black_nick || 'AI'
+})
+
+// Count moves from move_num split between players.
 const blackMoves = computed(() => {
   if (!gameStore.state) return 0
   return Math.floor(gameStore.state.move_num / 2)
 })
 
+const isMyTurn = computed(() => {
+  if (gameStore.status !== 'in_progress') return false
+  return gameStore.turn === playerStore.color
+})
+
+const turnLabel = computed(() => {
+  if (gameStore.state?.mode === 'multiplayer') {
+    return gameStore.turn === playerStore.color ? 'Your turn' : "Opponent's turn"
+  }
+  return gameStore.turn === 'white' ? 'Your turn' : 'AI thinking…'
+})
+
 onMounted(async () => {
-  // If game is already in store (just created), use it; otherwise fetch.
   if (!gameStore.state || gameStore.state.id !== gameId.value) {
     await gameStore.fetchGame(gameId.value)
-    // Determine player color from state.
-    if (gameStore.state && !playerStore.color) {
-      playerStore.setPlayer(gameStore.state.white_nick, 'white')
-    }
+  }
+  if (gameStore.state && !playerStore.color) {
+    const nick = gameStore.state.mode === 'multiplayer'
+      ? (myColor.value === 'white' ? gameStore.state.white_nick : gameStore.state.black_nick ?? '')
+      : gameStore.state.white_nick
+    playerStore.setPlayer(nick, myColor.value)
+  }
+  if (gameStore.state?.mode === 'multiplayer') {
+    gameStore.connectWS(gameId.value, playerStore.nickname, playerStore.color as 'white' | 'black')
+  }
+})
+
+onUnmounted(() => {
+  if (gameStore.state?.mode === 'multiplayer') {
+    gameStore.disconnectWS()
   }
 })
 
@@ -124,7 +169,11 @@ function onPathExtended(newPath: string[]) {
 }
 
 async function onMoveCommit(from: string, path: string[]) {
-  await gameStore.submitMove(gameId.value, from, path)
+  if (gameStore.state?.mode === 'multiplayer') {
+    gameStore.submitMoveWS(from, path)
+  } else {
+    await gameStore.submitMove(gameId.value, from, path)
+  }
   playerStore.incrementMoves()
 }
 </script>

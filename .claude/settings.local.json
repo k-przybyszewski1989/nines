@@ -4,7 +4,10 @@
       "Bash(go mod tidy:*)",
       "Bash(go build:*)",
       "Bash(npm install:*)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(go get:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)"
     ]
   }
 }

@@ -17,6 +17,10 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': 'http://backend:8080',
+      '/ws': {
+        target: 'ws://backend:8080',
+        ws: true,
+      },
     },
   },
   test: {

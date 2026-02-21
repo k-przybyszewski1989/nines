@@ -32,6 +32,11 @@ export interface MakeMoveRequest {
   path: string[]
 }
 
+export interface JoinGameRequest {
+  room_code: string
+  nickname: string
+}
+
 export const api = {
   createGame(req: CreateGameRequest): Promise<GameState> {
     return client.post<GameState>('/games', req).then(r => r.data)
@@ -41,5 +46,8 @@ export const api = {
   },
   makeMove(id: string, req: MakeMoveRequest): Promise<GameState> {
     return client.post<GameState>(`/games/${id}/move`, req).then(r => r.data)
+  },
+  joinGame(req: JoinGameRequest): Promise<GameState> {
+    return client.post<GameState>('/games/join', req).then(r => r.data)
   },
 }

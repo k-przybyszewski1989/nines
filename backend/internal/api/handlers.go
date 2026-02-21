@@ -2,7 +2,9 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,14 +12,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/nines/backend/internal/db"
 	"github.com/nines/backend/internal/game"
+	"github.com/nines/backend/internal/ws"
 )
 
 type Handler struct {
-	DB *sqlx.DB
+	DB        *sqlx.DB
+	WSManager *ws.Manager
 }
 
 // POST /api/games
-// Body: { "mode": "singleplayer", "nickname": "Alice", "ai_level": "medium" }
+// Body: { "mode": "singleplayer"|"multiplayer", "nickname": "Alice", "ai_level": "medium" }
 func (h *Handler) CreateGame(c *gin.Context) {
 	var req struct {
 		Mode     string `json:"mode" binding:"required"`
@@ -47,7 +51,12 @@ func (h *Handler) CreateGame(c *gin.Context) {
 	board := game.NewBoard()
 	aiLevel := sql.NullString{String: req.AILevel, Valid: req.AILevel != ""}
 
-	if err := db.CreateGame(h.DB, id, req.Mode, req.Nickname, aiLevel, board); err != nil {
+	var roomCode sql.NullString
+	if req.Mode == "multiplayer" {
+		roomCode = sql.NullString{String: generateRoomCode(), Valid: true}
+	}
+
+	if err := db.CreateGame(h.DB, id, req.Mode, req.Nickname, aiLevel, roomCode, board); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("create game: %v", err)})
 		return
 	}
@@ -71,6 +80,62 @@ func (h *Handler) GetGame(c *gin.Context) {
 	c.JSON(http.StatusOK, gs)
 }
 
+// POST /api/games/join
+// Body: { "room_code": "ABC123", "nickname": "Bob" }
+func (h *Handler) JoinGame(c *gin.Context) {
+	var req struct {
+		RoomCode string `json:"room_code" binding:"required"`
+		Nickname string `json:"nickname" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	gs, err := db.GetGameByRoomCode(h.DB, req.RoomCode)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "room not found"})
+		return
+	}
+	if gs.Status != "waiting" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "game is not waiting for players"})
+		return
+	}
+	if req.Nickname == gs.WhiteNick {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "nickname already taken"})
+		return
+	}
+
+	if err := db.JoinGame(h.DB, gs.ID, req.Nickname); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("join game: %v", err)})
+		return
+	}
+
+	gs.BlackNick = req.Nickname
+	gs.Status = "in_progress"
+
+	// Notify white player if already connected via WebSocket.
+	if h.WSManager != nil {
+		if hub := h.WSManager.Get(gs.ID); hub != nil {
+			type payload struct {
+				BlackNick string `json:"black_nick"`
+			}
+			type envelope struct {
+				Type    string  `json:"type"`
+				Payload payload `json:"payload"`
+			}
+			if msg, merr := json.Marshal(envelope{
+				Type:    "player_joined",
+				Payload: payload{BlackNick: gs.BlackNick},
+			}); merr == nil {
+				hub.Broadcast(msg)
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gs)
+}
+
 // POST /api/games/:id/move
 // Body: { "from": "H3", "path": ["H4","H5"] }
 func (h *Handler) MakeMove(c *gin.Context) {
@@ -88,6 +153,11 @@ func (h *Handler) MakeMove(c *gin.Context) {
 	gs, err := db.GetGame(h.DB, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
+		return
+	}
+
+	if gs.Mode == "multiplayer" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "use WebSocket for multiplayer"})
 		return
 	}
 
@@ -139,33 +209,39 @@ func (h *Handler) MakeMove(c *gin.Context) {
 	}
 
 	// AI turn (singleplayer only).
-	if gs.Mode == "singleplayer" {
-		aiLevel := game.AILevel(gs.AILevel)
-		aiMove, ok := game.AIMove(gs.Board, game.Black, aiLevel)
-		if ok {
-			aiPath := make([]string, len(aiMove.Path))
-			for i, p := range aiMove.Path {
-				aiPath[i] = p.String()
-			}
-			gs.Board = game.ApplyMove(gs.Board, aiMove.From, aiMove.Path)
-			gs.MoveNum++
-			_ = db.RecordMove(h.DB, id, "black", gs.MoveNum, aiMove.From.String(), aiPath)
-
-			if winner, ok2 := game.CheckWin(gs.Board); ok2 {
-				_ = db.UpdateGame(h.DB, id, gs.Board, "white", winner.String(), "finished", gs.MoveNum)
-				gs.Turn = "white"
-				gs.Winner = winner.String()
-				gs.Status = "finished"
-				c.JSON(http.StatusOK, gs)
-				return
-			}
+	aiLevel := game.AILevel(gs.AILevel)
+	aiMove, ok := game.AIMove(gs.Board, game.Black, aiLevel)
+	if ok {
+		aiPath := make([]string, len(aiMove.Path))
+		for i, p := range aiMove.Path {
+			aiPath[i] = p.String()
 		}
-		// After AI move, it's White's turn again.
-		gs.Turn = "white"
-	} else {
-		gs.Turn = "black"
+		gs.Board = game.ApplyMove(gs.Board, aiMove.From, aiMove.Path)
+		gs.MoveNum++
+		_ = db.RecordMove(h.DB, id, "black", gs.MoveNum, aiMove.From.String(), aiPath)
+
+		if winner, ok2 := game.CheckWin(gs.Board); ok2 {
+			_ = db.UpdateGame(h.DB, id, gs.Board, "white", winner.String(), "finished", gs.MoveNum)
+			gs.Turn = "white"
+			gs.Winner = winner.String()
+			gs.Status = "finished"
+			c.JSON(http.StatusOK, gs)
+			return
+		}
 	}
+	// After AI move, it's White's turn again.
+	gs.Turn = "white"
 
 	_ = db.UpdateGame(h.DB, id, gs.Board, gs.Turn, "", gs.Status, gs.MoveNum)
 	c.JSON(http.StatusOK, gs)
+}
+
+const roomCodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+func generateRoomCode() string {
+	b := make([]byte, 6)
+	for i := range b {
+		b[i] = roomCodeChars[rand.Intn(len(roomCodeChars))]
+	}
+	return string(b)
 }

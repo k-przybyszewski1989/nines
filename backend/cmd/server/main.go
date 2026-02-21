@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nines/backend/internal/api"
 	"github.com/nines/backend/internal/db"
+	"github.com/nines/backend/internal/ws"
 )
 
 func main() {
@@ -21,7 +22,9 @@ func main() {
 		log.Fatalf("migrate: %v", err)
 	}
 
-	h := &api.Handler{DB: database}
+	wsManager := ws.NewManager()
+	h := &api.Handler{DB: database, WSManager: wsManager}
+
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -34,8 +37,11 @@ func main() {
 	{
 		apiGroup.POST("/games", h.CreateGame)
 		apiGroup.GET("/games/:id", h.GetGame)
+		apiGroup.POST("/games/join", h.JoinGame)
 		apiGroup.POST("/games/:id/move", h.MakeMove)
 	}
+
+	r.GET("/ws/:gameId", ws.ServeWS(wsManager, database))
 
 	port := env("PORT", "8080")
 	log.Printf("listening on :%s", port)
