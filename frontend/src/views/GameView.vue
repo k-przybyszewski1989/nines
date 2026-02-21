@@ -152,6 +152,7 @@ const turnSound = new Audio('/turn.wav')
 watch(() => gameStore.state?.move_num, (val, prev) => {
   if (prev !== undefined && val !== prev && isMyTurn.value) {
     turnSound.play().catch(() => {})
+    navigator.vibrate?.(200)
   }
 })
 
