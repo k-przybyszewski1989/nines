@@ -5,10 +5,18 @@
     @click="$emit('click')"
   >
     <!-- Pawn -->
-    <div v-if="pawn !== 'empty'" class="pawn" :class="pawn" />
+    <div
+      v-if="pawn !== 'empty'"
+      class="pawn"
+      :class="pawn"
+    />
 
     <!-- Highlight indicator dot -->
-    <div v-else-if="highlight !== 'none'" class="highlight-dot" :class="highlight" />
+    <div
+      v-else-if="highlight !== 'none'"
+      class="highlight-dot"
+      :class="highlight"
+    />
   </div>
 </template>
 

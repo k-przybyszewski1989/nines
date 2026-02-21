@@ -1,5 +1,5 @@
 type WsMessageType = 'game_state' | 'player_joined' | 'move_made' | 'game_over' | 'error'
-type WsMessage = { type: WsMessageType; payload: any }
+type WsMessage = { type: WsMessageType; payload: unknown }
 type MessageHandler = (msg: WsMessage) => void
 
 class WsService {

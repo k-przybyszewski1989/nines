@@ -1,15 +1,32 @@
 <template>
-  <v-container fluid class="pa-4">
+  <v-container
+    fluid
+    class="pa-4"
+  >
     <v-row justify="center">
-      <v-col cols="12" md="8" lg="6">
-
+      <v-col
+        cols="12"
+        md="8"
+        lg="6"
+      >
         <!-- Loading -->
-        <div v-if="gameStore.loading" class="d-flex justify-center align-center" style="height: 80vh">
-          <v-progress-circular indeterminate size="64" />
+        <div
+          v-if="gameStore.loading"
+          class="d-flex justify-center align-center"
+          style="height: 80vh"
+        >
+          <v-progress-circular
+            indeterminate
+            size="64"
+          />
         </div>
 
         <!-- Error -->
-        <v-alert v-else-if="gameStore.error && !gameStore.state" type="error" class="mb-4">
+        <v-alert
+          v-else-if="gameStore.error && !gameStore.state"
+          type="error"
+          class="mb-4"
+        >
           {{ gameStore.error }}
         </v-alert>
 
@@ -17,12 +34,22 @@
           <!-- Waiting for opponent (multiplayer only) -->
           <template v-if="gameStore.status === 'waiting'">
             <v-card class="text-center pa-8 mb-4">
-              <div class="text-h6 mb-3">Waiting for opponent...</div>
-              <div class="text-subtitle-2 mb-2">Share this room code:</div>
-              <div class="text-h3 font-weight-bold mb-4" style="letter-spacing: 0.2em">
+              <div class="text-h6 mb-3">
+                Waiting for opponent...
+              </div>
+              <div class="text-subtitle-2 mb-2">
+                Share this room code:
+              </div>
+              <div
+                class="text-h3 font-weight-bold mb-4"
+                style="letter-spacing: 0.2em"
+              >
                 {{ gameStore.state.room_code }}
               </div>
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular
+                indeterminate
+                color="primary"
+              />
             </v-card>
           </template>
 
@@ -40,7 +67,7 @@
             <GameBoard
               class="my-2"
               :board="gameStore.board!"
-              :player-color="playerStore.color as 'white' | 'black'"
+              :player-color="playerColor"
               :is-my-turn="isMyTurn"
               :game-status="gameStore.status"
               :selected-pawn="gameStore.selectedPawn"
@@ -62,7 +89,10 @@
             />
 
             <!-- Status / turn indicator -->
-            <v-row class="mt-3" justify="center">
+            <v-row
+              class="mt-3"
+              justify="center"
+            >
               <v-col cols="auto">
                 <v-chip
                   v-if="gameStore.status === 'in_progress'"
@@ -74,12 +104,17 @@
               </v-col>
             </v-row>
 
-            <v-alert v-if="gameStore.error" type="warning" class="mt-3" closable @click:close="gameStore.error = ''">
+            <v-alert
+              v-if="gameStore.error"
+              type="warning"
+              class="mt-3"
+              closable
+              @click:close="gameStore.error = ''"
+            >
               {{ gameStore.error }}
             </v-alert>
           </template>
         </template>
-
       </v-col>
     </v-row>
 
@@ -108,6 +143,7 @@ const playerStore = usePlayerStore()
 
 const gameId = computed(() => route.params.id as string)
 const myColor = computed(() => (route.query.color as string || 'white') as 'white' | 'black')
+const playerColor = computed(() => playerStore.color as 'white' | 'black')
 
 const blackDisplayName = computed(() => {
   if (!gameStore.state) return 'AI'

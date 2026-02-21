@@ -1,15 +1,31 @@
 <template>
-  <v-card variant="outlined" rounded="lg" class="pa-3" :class="isActive ? 'border-primary' : ''">
+  <v-card
+    variant="outlined"
+    rounded="lg"
+    class="pa-3"
+    :class="isActive ? 'border-primary' : ''"
+  >
     <div class="d-flex align-center gap-3">
-      <div class="player-dot" :class="color" />
+      <div
+        class="player-dot"
+        :class="color"
+      />
       <div>
-        <div class="text-body-1 font-weight-bold">{{ name }}</div>
+        <div class="text-body-1 font-weight-bold">
+          {{ name }}
+        </div>
         <div class="text-caption text-medium-emphasis">
           {{ color === 'white' ? 'White' : 'Black' }} · {{ moveCount }} move{{ moveCount !== 1 ? 's' : '' }}
         </div>
       </div>
       <v-spacer />
-      <v-chip v-if="isActive" color="primary" size="small">Your turn</v-chip>
+      <v-chip
+        v-if="isActive"
+        color="primary"
+        size="small"
+      >
+        Your turn
+      </v-chip>
     </div>
   </v-card>
 </template>

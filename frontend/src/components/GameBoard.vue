@@ -3,13 +3,22 @@
     <div class="board-grid">
       <!-- Row labels (8→1) on the left -->
       <div class="label-corner" />
-      <div v-for="c in 8" :key="'col-label-' + c" class="col-label">
+      <div
+        v-for="c in 8"
+        :key="'col-label-' + c"
+        class="col-label"
+      >
         {{ colLabel(c - 1) }}
       </div>
 
-      <template v-for="r in 8" :key="'row-' + r">
+      <template
+        v-for="r in 8"
+        :key="'row-' + r"
+      >
         <!-- Row number label -->
-        <div class="row-label">{{ 9 - r }}</div>
+        <div class="row-label">
+          {{ 9 - r }}
+        </div>
         <!-- 8 squares in this row (displayed top→bottom = row 8→1 = index 7→0) -->
         <BoardSquare
           v-for="c in 8"

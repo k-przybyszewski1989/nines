@@ -27,9 +27,9 @@ export const useGameStore = defineStore('game', () => {
     loading.value = true
     error.value = ''
     try {
-      state.value = await api.createGame({ mode, nickname, ai_level: aiLevel as any })
-    } catch (e: any) {
-      error.value = e?.response?.data?.error ?? 'Failed to create game'
+      state.value = await api.createGame({ mode, nickname, ai_level: aiLevel as 'easy' | 'medium' | 'hard' | undefined })
+    } catch (e) {
+      error.value = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to create game'
       throw e
     } finally {
       loading.value = false
@@ -41,8 +41,8 @@ export const useGameStore = defineStore('game', () => {
     error.value = ''
     try {
       state.value = await api.getGame(id)
-    } catch (e: any) {
-      error.value = e?.response?.data?.error ?? 'Failed to load game'
+    } catch (e) {
+      error.value = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to load game'
       throw e
     } finally {
       loading.value = false
@@ -61,8 +61,8 @@ export const useGameStore = defineStore('game', () => {
       state.value = await api.makeMove(id, { from, path })
       clearSelection()
       lastAISquares.value = prevBoard ? diffColorSquares(prevBoard, state.value!.board, 'black') : []
-    } catch (e: any) {
-      error.value = e?.response?.data?.error ?? 'Invalid move'
+    } catch (e) {
+      error.value = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Invalid move'
       throw e
     } finally {
       loading.value = false
@@ -74,30 +74,37 @@ export const useGameStore = defineStore('game', () => {
     wsService.onMessage((msg) => {
       switch (msg.type) {
         case 'game_state':
-          state.value = msg.payload
+          state.value = msg.payload as GameState
           break
-        case 'player_joined':
+        case 'player_joined': {
+          const p = msg.payload as { black_nick: string }
           if (state.value) {
-            state.value = { ...state.value, black_nick: msg.payload.black_nick, status: 'in_progress' }
+            state.value = { ...state.value, black_nick: p.black_nick, status: 'in_progress' }
           }
           break
+        }
         case 'move_made': {
+          const p = msg.payload as { state: GameState; player: string }
           const prev = state.value?.board
-          state.value = msg.payload.state
-          if (prev && msg.payload.player !== myColor) {
-            lastAISquares.value = diffColorSquares(prev, state.value!.board, msg.payload.player)
+          state.value = p.state
+          if (prev && p.player !== myColor) {
+            lastAISquares.value = diffColorSquares(prev, state.value!.board, p.player)
           }
           clearSelection()
           break
         }
-        case 'game_over':
+        case 'game_over': {
+          const p = msg.payload as { winner: string }
           if (state.value) {
-            state.value = { ...state.value, winner: msg.payload.winner, status: 'finished' }
+            state.value = { ...state.value, winner: p.winner, status: 'finished' }
           }
           break
-        case 'error':
-          error.value = msg.payload.message
+        }
+        case 'error': {
+          const p = msg.payload as { message: string }
+          error.value = p.message
           break
+        }
       }
     })
     wsConnected.value = true

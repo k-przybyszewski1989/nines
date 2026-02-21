@@ -1,8 +1,23 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row justify="center" align="center" class="fill-height">
-      <v-col cols="12" sm="8" md="5" lg="4">
-        <v-card elevation="8" rounded="xl">
+  <v-container
+    class="fill-height"
+    fluid
+  >
+    <v-row
+      justify="center"
+      align="center"
+      class="fill-height"
+    >
+      <v-col
+        cols="12"
+        sm="8"
+        md="5"
+        lg="4"
+      >
+        <v-card
+          elevation="8"
+          rounded="xl"
+        >
           <v-card-title class="text-h4 text-center pa-6 font-weight-bold">
             ♟ Nines
           </v-card-title>
@@ -19,7 +34,9 @@
 
             <!-- Step: choose mode -->
             <template v-if="step === 'mode'">
-              <div class="text-subtitle-1 mb-3">Select game mode</div>
+              <div class="text-subtitle-1 mb-3">
+                Select game mode
+              </div>
               <v-btn
                 block
                 color="primary"
@@ -28,7 +45,9 @@
                 :disabled="!nickname.trim()"
                 @click="step = 'difficulty'"
               >
-                <v-icon start>mdi-robot</v-icon>
+                <v-icon start>
+                  mdi-robot
+                </v-icon>
                 Singleplayer
               </v-btn>
               <v-btn
@@ -39,14 +58,18 @@
                 :disabled="!nickname.trim()"
                 @click="goMultiplayer"
               >
-                <v-icon start>mdi-account-multiple</v-icon>
+                <v-icon start>
+                  mdi-account-multiple
+                </v-icon>
                 Multiplayer
               </v-btn>
             </template>
 
             <!-- Step: choose difficulty -->
             <template v-else-if="step === 'difficulty'">
-              <div class="text-subtitle-1 mb-3">Select difficulty</div>
+              <div class="text-subtitle-1 mb-3">
+                Select difficulty
+              </div>
               <v-btn
                 block
                 color="green"
@@ -77,10 +100,22 @@
               >
                 Hard
               </v-btn>
-              <v-btn variant="text" block @click="step = 'mode'">← Back</v-btn>
+              <v-btn
+                variant="text"
+                block
+                @click="step = 'mode'"
+              >
+                ← Back
+              </v-btn>
             </template>
 
-            <v-alert v-if="error" type="error" class="mt-3">{{ error }}</v-alert>
+            <v-alert
+              v-if="error"
+              type="error"
+              class="mt-3"
+            >
+              {{ error }}
+            </v-alert>
           </v-card-text>
         </v-card>
       </v-col>
@@ -118,8 +153,8 @@ async function startGame(level: string) {
     await gameStore.createGame('singleplayer', nickname.value.trim(), level)
     playerStore.setPlayer(nickname.value.trim(), 'white')
     router.push({ name: 'game', params: { id: gameStore.state!.id } })
-  } catch (e: any) {
-    error.value = e?.response?.data?.error ?? 'Failed to start game'
+  } catch (e) {
+    error.value = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to start game'
   } finally {
     loading.value = false
   }
