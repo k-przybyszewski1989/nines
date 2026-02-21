@@ -19,7 +19,7 @@
           rounded="xl"
         >
           <v-card-title class="text-h4 text-center pa-6 font-weight-bold">
-            ♟ Nines
+            ♡ Nines ♡
           </v-card-title>
           <v-card-text class="pa-6">
             <v-text-field
