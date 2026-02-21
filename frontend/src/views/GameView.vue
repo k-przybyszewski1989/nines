@@ -88,22 +88,6 @@
               :is-active="gameStore.turn === 'white'"
             />
 
-            <!-- Status / turn indicator -->
-            <v-row
-              class="mt-3"
-              justify="center"
-            >
-              <v-col cols="auto">
-                <v-chip
-                  v-if="gameStore.status === 'in_progress'"
-                  :color="gameStore.turn === 'white' ? 'white' : 'deep-purple'"
-                  size="large"
-                >
-                  {{ turnLabel }}
-                </v-chip>
-              </v-col>
-            </v-row>
-
             <v-alert
               v-if="gameStore.error"
               type="warning"
@@ -129,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import GameBoard from '@/components/GameBoard.vue'
 import PlayerInfo from '@/components/PlayerInfo.vue'
@@ -164,11 +148,11 @@ const isMyTurn = computed(() => {
   return gameStore.turn === playerStore.color
 })
 
-const turnLabel = computed(() => {
-  if (gameStore.state?.mode === 'multiplayer') {
-    return gameStore.turn === playerStore.color ? 'Your turn' : "Opponent's turn"
+const turnSound = new Audio('/turn.wav')
+watch(() => gameStore.state?.move_num, (val, prev) => {
+  if (prev !== undefined && val !== prev && isMyTurn.value) {
+    turnSound.play().catch(() => {})
   }
-  return gameStore.turn === 'white' ? 'Your turn' : 'AI thinking…'
 })
 
 onMounted(async () => {

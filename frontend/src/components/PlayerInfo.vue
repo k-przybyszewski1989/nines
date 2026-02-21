@@ -1,9 +1,9 @@
 <template>
   <v-card
-    variant="outlined"
     rounded="lg"
-    class="pa-3"
-    :class="isActive ? 'border-primary' : ''"
+    class="pa-3 player-card"
+    :class="isActive ? 'player-card--active' : 'player-card--inactive'"
+    :elevation="isActive ? 4 : 0"
   >
     <div class="d-flex align-center gap-3">
       <div
@@ -40,6 +40,17 @@ defineProps<{
 </script>
 
 <style scoped>
+.player-card {
+  transition: box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease;
+  border: 2px solid transparent;
+}
+.player-card--active {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+.player-card--inactive {
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
 .player-dot {
   width: 24px;
   height: 24px;
