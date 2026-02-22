@@ -2,7 +2,7 @@
   <div
     class="board-square"
     :class="[squareColor, highlightClass, { 'cursor-pointer': isClickable, 'sq-last-ai': isLastAiMove && highlight === 'none' }]"
-@click="$emit('click')"
+    @click="$emit('click')"
   >
     <!-- Pawn -->
     <div
@@ -36,12 +36,9 @@ defineEmits<{
 }>()
 
 // Classic chess board checkerboard coloring.
-// White starts at cols 5–7, rows 0–2; Black starts at cols 0–2, rows 5–7.
-const squareColor = computed(() => {
-  const isHome = (props.col >= 5 && props.row <= 2) || (props.col <= 2 && props.row >= 5)
-  const lightOrDark = (props.col + props.row) % 2 === 0 ? 'light' : 'dark'
-  return isHome ? `sq-home-${lightOrDark}` : `sq-${lightOrDark}`
-})
+const squareColor = computed(() =>
+  (props.col + props.row) % 2 === 0 ? 'sq-light' : 'sq-dark'
+)
 
 const highlightClass = computed(() => {
   if (props.highlight === 'selected') return 'sq-selected'
@@ -67,10 +64,6 @@ const isClickable = computed(() =>
 }
 .sq-light { background-color: #f0d9b5; }
 .sq-dark  { background-color: #b58863; }
-
-/* Home zones: light/dark blended with a reddish tint (~25%) */
-.sq-home-light { background-color: #e4c4b4; }
-.sq-home-dark  { background-color: #a87060; }
 
 .sq-selected  { background-color: #f6f669 !important; }
 .sq-step      { background-color: #7fc97f !important; }
