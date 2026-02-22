@@ -1,25 +1,27 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nines/backend/internal/api"
+	"github.com/nines/backend/internal/config"
 	"github.com/nines/backend/internal/db"
 	"github.com/nines/backend/internal/ws"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	dsn := dsn()
-	database, err := db.Connect(dsn)
+	cfg, err := config.Load(".env")
 	if err != nil {
-		log.Fatalf("connect to db: %v", err)
+		logrus.Fatalf("load config: %v", err)
+	}
+
+	database, err := db.Connect(cfg.DSN())
+	if err != nil {
+		logrus.Fatalf("connect to db: %v", err)
 	}
 	if err := db.Migrate(database); err != nil {
-		log.Fatalf("migrate: %v", err)
+		logrus.Fatalf("migrate: %v", err)
 	}
 
 	wsManager := ws.NewManager()
@@ -43,25 +45,8 @@ func main() {
 
 	r.GET("/ws/:gameId", ws.ServeWS(wsManager, database))
 
-	port := env("PORT", "8080")
-	log.Printf("listening on :%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("run: %v", err)
+	logrus.Infof("listening on :%s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
+		logrus.Fatalf("run: %v", err)
 	}
-}
-
-func dsn() string {
-	host := env("DB_HOST", "localhost")
-	port := env("DB_PORT", "3306")
-	user := env("DB_USER", "nines")
-	pass := env("DB_PASS", "nines")
-	name := env("DB_NAME", "nines")
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, pass, host, port, name)
-}
-
-func env(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
 }

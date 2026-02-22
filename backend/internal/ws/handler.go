@@ -3,11 +3,11 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
 	"github.com/nines/backend/internal/db"
@@ -67,7 +67,7 @@ func ServeWS(manager *Manager, database *gorm.DB) gin.HandlerFunc {
 
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Printf("ws upgrade: %v", err)
+			logrus.Errorf("ws upgrade: %v", err)
 			return
 		}
 

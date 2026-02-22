@@ -1,10 +1,10 @@
 package ws
 
 import (
-	"log"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -39,7 +39,7 @@ func (c *Client) ReadPump(onMessage func([]byte)) {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("ws read error: %v", err)
+				logrus.Errorf("ws read error: %v", err)
 			}
 			break
 		}

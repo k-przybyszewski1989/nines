@@ -23,13 +23,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_USER: nines
-      DB_PASS: nines
-      DB_NAME: nines
-      PORT: "8080"
+    env_file:
+      - backend/.env
 
   frontend:
     build: ./frontend

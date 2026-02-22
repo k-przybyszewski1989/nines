@@ -12,6 +12,45 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Ensure backend/.env on server
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          envs: DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME
+          script: |
+            ENV_FILE="${{ secrets.DEPLOY_PATH }}/backend/.env"
+            EXAMPLE_FILE="${{ secrets.DEPLOY_PATH }}/backend/.env.example"
+
+            if [ ! -f "$ENV_FILE" ]; then
+              cp "$EXAMPLE_FILE" "$ENV_FILE"
+              echo "Created $ENV_FILE from example."
+            fi
+
+            # Delete the key line (if present) then append the current value.
+            # This handles both first-time setup and secret rotations.
+            set_env() {
+              local key="$1" val="$2" file="$3"
+              sed -i "/^${key}=/d" "$file"
+              printf '%s=%s\n' "$key" "$val" >> "$file"
+            }
+
+            set_env DB_HOST "$DB_HOST" "$ENV_FILE"
+            set_env DB_PORT "$DB_PORT" "$ENV_FILE"
+            set_env DB_USER "$DB_USER" "$ENV_FILE"
+            set_env DB_PASS "$DB_PASS" "$ENV_FILE"
+            set_env DB_NAME "$DB_NAME" "$ENV_FILE"
+
+            echo "backend/.env DB vars are up to date."
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.0
         with:
