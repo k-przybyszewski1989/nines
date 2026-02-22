@@ -54,49 +54,51 @@
           </template>
 
           <template v-else>
-            <!-- Black player (top) -->
-            <PlayerInfo
-              class="mb-3"
-              :name="blackDisplayName"
-              color="black"
-              :move-count="blackMoves"
-              :is-active="gameStore.turn === 'black'"
-            />
+            <div style="width: min(90vw, 640px); margin: 0 auto">
+              <!-- Black player (top) -->
+              <PlayerInfo
+                class="mb-3"
+                :name="blackDisplayName"
+                color="black"
+                :move-count="blackMoves"
+                :is-active="gameStore.turn === 'black'"
+              />
 
-            <!-- Board -->
-            <GameBoard
-              class="my-2"
-              :board="gameStore.board!"
-              :player-color="playerColor"
-              :is-my-turn="isMyTurn"
-              :game-status="gameStore.status"
-              :selected-pawn="gameStore.selectedPawn"
-              :current-path="gameStore.currentPath"
-              :valid-paths="gameStore.validPaths"
-              :last-ai-squares="gameStore.lastAISquares"
-              @pawn-selected="onPawnSelected"
-              @move-commit="onMoveCommit"
-              @path-extended="onPathExtended"
-            />
+              <!-- Board -->
+              <GameBoard
+                class="my-2"
+                :board="gameStore.board!"
+                :player-color="playerColor"
+                :is-my-turn="isMyTurn"
+                :game-status="gameStore.status"
+                :selected-pawn="gameStore.selectedPawn"
+                :current-path="gameStore.currentPath"
+                :valid-paths="gameStore.validPaths"
+                :last-ai-squares="gameStore.lastAISquares"
+                @pawn-selected="onPawnSelected"
+                @move-commit="onMoveCommit"
+                @path-extended="onPathExtended"
+              />
 
-            <!-- White player (bottom) -->
-            <PlayerInfo
-              class="mt-3"
-              :name="gameStore.state?.white_nick || playerStore.nickname"
-              color="white"
-              :move-count="playerStore.moveCount"
-              :is-active="gameStore.turn === 'white'"
-            />
+              <!-- White player (bottom) -->
+              <PlayerInfo
+                class="mt-3"
+                :name="gameStore.state?.white_nick || playerStore.nickname"
+                color="white"
+                :move-count="playerStore.moveCount"
+                :is-active="gameStore.turn === 'white'"
+              />
 
-            <v-alert
-              v-if="gameStore.error"
-              type="warning"
-              class="mt-3"
-              closable
-              @click:close="gameStore.error = ''"
-            >
-              {{ gameStore.error }}
-            </v-alert>
+              <v-alert
+                v-if="gameStore.error"
+                type="warning"
+                class="mt-3"
+                closable
+                @click:close="gameStore.error = ''"
+              >
+                {{ gameStore.error }}
+              </v-alert>
+            </div>
           </template>
         </template>
       </v-col>
