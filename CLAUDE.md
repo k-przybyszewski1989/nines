@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Backend (Go)
+ORM: GORM
+
 ```bash
 cd backend
 go mod download

@@ -3,7 +3,7 @@ package ws
 import (
 	"sync"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Manager owns all Hubs, keyed by game ID.
@@ -17,7 +17,7 @@ func NewManager() *Manager {
 }
 
 // GetOrCreate returns the Hub for gameID, creating it if necessary.
-func (m *Manager) GetOrCreate(gameID string, database *sqlx.DB) *Hub {
+func (m *Manager) GetOrCreate(gameID string, database *gorm.DB) *Hub {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if h, ok := m.hubs[gameID]; ok {
@@ -44,7 +44,7 @@ type Hub struct {
 	gameID  string
 	mu      sync.Mutex
 	clients map[*Client]bool
-	db      *sqlx.DB
+	db      *gorm.DB
 }
 
 func (h *Hub) Register(c *Client) {

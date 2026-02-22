@@ -8,7 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
+
 	"github.com/nines/backend/internal/db"
 	"github.com/nines/backend/internal/game"
 )
@@ -23,7 +24,7 @@ type wsMessage struct {
 }
 
 // ServeWS is the Gin handler for GET /ws/:gameId.
-func ServeWS(manager *Manager, database *sqlx.DB) gin.HandlerFunc {
+func ServeWS(manager *Manager, database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		gameID := c.Param("gameId")
 		nickname := c.Query("nickname")
@@ -98,7 +99,7 @@ func ServeWS(manager *Manager, database *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-func handleMessage(c *Client, h *Hub, database *sqlx.DB, raw []byte) {
+func handleMessage(c *Client, h *Hub, database *gorm.DB, raw []byte) {
 	var msg wsMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		sendError(c, "invalid JSON")
@@ -112,7 +113,7 @@ func handleMessage(c *Client, h *Hub, database *sqlx.DB, raw []byte) {
 	}
 }
 
-func handleMakeMove(c *Client, h *Hub, database *sqlx.DB, payload json.RawMessage) {
+func handleMakeMove(c *Client, h *Hub, database *gorm.DB, payload json.RawMessage) {
 	var req struct {
 		From string   `json:"from"`
 		Path []string `json:"path"`

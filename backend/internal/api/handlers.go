@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -9,14 +8,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
+
 	"github.com/nines/backend/internal/db"
 	"github.com/nines/backend/internal/game"
 	"github.com/nines/backend/internal/ws"
 )
 
 type Handler struct {
-	DB        *sqlx.DB
+	DB        *gorm.DB
 	WSManager *ws.Manager
 }
 
@@ -49,11 +49,16 @@ func (h *Handler) CreateGame(c *gin.Context) {
 
 	id := uuid.New().String()
 	board := game.NewBoard()
-	aiLevel := sql.NullString{String: req.AILevel, Valid: req.AILevel != ""}
 
-	var roomCode sql.NullString
+	var aiLevel *string
+	if req.AILevel != "" {
+		aiLevel = &req.AILevel
+	}
+
+	var roomCode *string
 	if req.Mode == "multiplayer" {
-		roomCode = sql.NullString{String: generateRoomCode(), Valid: true}
+		code := generateRoomCode()
+		roomCode = &code
 	}
 
 	if err := db.CreateGame(h.DB, id, req.Mode, req.Nickname, aiLevel, roomCode, board); err != nil {
