@@ -59,6 +59,13 @@ func (r GameRow) ToGameState() (*GameState, error) {
 	return gs, nil
 }
 
+// LastMove holds the most recent move made in a game.
+type LastMove struct {
+	From   string   `json:"from"`
+	Path   []string `json:"path"`
+	Player string   `json:"player"`
+}
+
 // GameState is the application-level representation of a game.
 type GameState struct {
 	ID        string     `json:"id"`
@@ -72,6 +79,7 @@ type GameState struct {
 	Winner    string     `json:"winner,omitempty"`
 	Board     game.Board `json:"board"`
 	MoveNum   int        `json:"move_num"`
+	LastMove  *LastMove  `json:"last_move,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
@@ -100,7 +108,12 @@ func GetGameByRoomCode(database *sqlx.DB, roomCode string) (*GameState, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get game by room code %s: %w", roomCode, err)
 	}
-	return row.ToGameState()
+	gs, err := row.ToGameState()
+	if err != nil {
+		return nil, err
+	}
+	gs.LastMove, _ = getLastMove(database, gs.ID)
+	return gs, nil
 }
 
 // JoinGame sets the black player's nickname and sets status to in_progress.
@@ -112,6 +125,27 @@ func JoinGame(database *sqlx.DB, id, blackNick string) error {
 	return err
 }
 
+// getLastMove fetches the most recent move for a game, returning nil if none exist.
+func getLastMove(database *sqlx.DB, gameID string) (*LastMove, error) {
+	var row struct {
+		FromPos string `db:"from_pos"`
+		Path    []byte `db:"path"`
+		Player  string `db:"player"`
+	}
+	err := database.Get(&row, `SELECT from_pos, path, player FROM moves WHERE game_id = ? ORDER BY move_num DESC LIMIT 1`, gameID)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get last move: %w", err)
+	}
+	var path []string
+	if err := json.Unmarshal(row.Path, &path); err != nil {
+		return nil, fmt.Errorf("unmarshal last move path: %w", err)
+	}
+	return &LastMove{From: row.FromPos, Path: path, Player: row.Player}, nil
+}
+
 // GetGame retrieves a game by ID.
 func GetGame(database *sqlx.DB, id string) (*GameState, error) {
 	var row GameRow
@@ -119,7 +153,12 @@ func GetGame(database *sqlx.DB, id string) (*GameState, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get game %s: %w", id, err)
 	}
-	return row.ToGameState()
+	gs, err := row.ToGameState()
+	if err != nil {
+		return nil, err
+	}
+	gs.LastMove, _ = getLastMove(database, id)
+	return gs, nil
 }
 
 // UpdateGame saves the new board, turn, winner, status, and move_num.

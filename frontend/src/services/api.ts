@@ -5,6 +5,12 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+export interface LastMove {
+  from: string
+  path: string[]
+  player: string
+}
+
 export interface GameState {
   id: string
   mode: string
@@ -17,6 +23,7 @@ export interface GameState {
   winner?: string
   board: string[][]
   move_num: number
+  last_move?: LastMove
   created_at: string
   updated_at: string
 }

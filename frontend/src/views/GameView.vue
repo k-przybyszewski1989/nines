@@ -169,6 +169,7 @@ onMounted(async () => {
     playerStore.setPlayer(nick, myColor.value)
   }
   if (gameStore.state?.mode === 'multiplayer') {
+    gameStore.restoreLastMoveHighlight(playerStore.color)
     gameStore.connectWS(gameId.value, playerStore.nickname, playerStore.color as 'white' | 'black')
   }
 })

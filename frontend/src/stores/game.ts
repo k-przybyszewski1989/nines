@@ -69,12 +69,20 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  // Restores lastAISquares from state.last_move on page load/refresh.
+  function restoreLastMoveHighlight(myColor: string) {
+    const lm = state.value?.last_move
+    if (!lm || lm.player === myColor) return
+    lastAISquares.value = [lm.from, lm.path[lm.path.length - 1]]
+  }
+
   function connectWS(gameId: string, nickname: string, myColor: 'white' | 'black'): void {
     wsService.connect(gameId, nickname)
     wsService.onMessage((msg) => {
       switch (msg.type) {
         case 'game_state':
           state.value = msg.payload as GameState
+          restoreLastMoveHighlight(myColor)
           break
         case 'player_joined': {
           const p = msg.payload as { black_nick: string }
@@ -168,5 +176,6 @@ export const useGameStore = defineStore('game', () => {
     disconnectWS,
     selectPawn,
     clearSelection,
+    restoreLastMoveHighlight,
   }
 })
