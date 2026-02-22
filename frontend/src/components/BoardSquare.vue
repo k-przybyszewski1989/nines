@@ -76,8 +76,8 @@ const isClickable = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80%;
-  height: 80%;
+  width: 70%;
+  height: 70%;
   border-radius: 50%;
   transition: transform 0.15s;
 }

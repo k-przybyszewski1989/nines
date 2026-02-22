@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import BoardSquare from './BoardSquare.vue'
 
 const props = defineProps<{
@@ -259,6 +259,15 @@ function onSquareClick(col: number, row: number) {
     }
   }
 }
+
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.selectedPawn) {
+    emit('pawnSelected', '', [])
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeyDown))
+onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 
 function commitMove() {
   if (props.selectedPawn && props.currentPath.length > 0) {
