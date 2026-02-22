@@ -55,6 +55,16 @@
 
           <template v-else>
             <div style="width: min(90vw, 640px); margin: 0 auto">
+              <!-- Mute button -->
+              <div class="d-flex justify-end mb-1">
+                <v-btn
+                  :icon="muted ? 'mdi-volume-off' : 'mdi-volume-high'"
+                  size="small"
+                  variant="text"
+                  @click="toggleMute"
+                />
+              </div>
+
               <!-- Black player (top) -->
               <PlayerInfo
                 class="mb-3"
@@ -115,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import GameBoard from '@/components/GameBoard.vue'
 import PlayerInfo from '@/components/PlayerInfo.vue'
@@ -150,10 +160,16 @@ const isMyTurn = computed(() => {
   return gameStore.turn === playerStore.color
 })
 
+const muted = ref(localStorage.getItem('sound_muted') === 'true')
+function toggleMute() {
+  muted.value = !muted.value
+  localStorage.setItem('sound_muted', String(muted.value))
+}
+
 const turnSound = new Audio('/turn.wav')
 watch(() => gameStore.state?.move_num, (val, prev) => {
   if (prev !== undefined && val !== prev && isMyTurn.value) {
-    turnSound.play().catch(() => {})
+    if (!muted.value) turnSound.play().catch(() => {})
     navigator.vibrate?.(200)
   }
 })
