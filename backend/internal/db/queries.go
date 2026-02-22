@@ -22,9 +22,11 @@ type GameRow struct {
 	Turn      string         `db:"turn"`
 	Winner    sql.NullString `db:"winner"`
 	Board     []byte         `db:"board"`
-	MoveNum   int            `db:"move_num"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
+	MoveNum    int            `db:"move_num"`
+	WhiteScore int            `db:"white_score"`
+	BlackScore int            `db:"black_score"`
+	CreatedAt  time.Time      `db:"created_at"`
+	UpdatedAt  time.Time      `db:"updated_at"`
 }
 
 // ToGameState converts a GameRow to a GameState.
@@ -39,10 +41,12 @@ func (r GameRow) ToGameState() (*GameState, error) {
 		Status:    r.Status,
 		WhiteNick: r.WhiteNick,
 		Turn:      r.Turn,
-		Board:     b,
-		MoveNum:   r.MoveNum,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
+		Board:      b,
+		MoveNum:    r.MoveNum,
+		WhiteScore: r.WhiteScore,
+		BlackScore: r.BlackScore,
+		CreatedAt:  r.CreatedAt,
+		UpdatedAt:  r.UpdatedAt,
 	}
 	if r.RoomCode.Valid {
 		gs.RoomCode = r.RoomCode.String
@@ -78,8 +82,10 @@ type GameState struct {
 	Turn      string     `json:"turn"`
 	Winner    string     `json:"winner,omitempty"`
 	Board     game.Board `json:"board"`
-	MoveNum   int        `json:"move_num"`
-	LastMove  *LastMove  `json:"last_move,omitempty"`
+	MoveNum    int        `json:"move_num"`
+	WhiteScore int        `json:"white_score"`
+	BlackScore int        `json:"black_score"`
+	LastMove   *LastMove  `json:"last_move,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
@@ -161,8 +167,8 @@ func GetGame(database *sqlx.DB, id string) (*GameState, error) {
 	return gs, nil
 }
 
-// UpdateGame saves the new board, turn, winner, status, and move_num.
-func UpdateGame(database *sqlx.DB, id string, b game.Board, turn, winner, status string, moveNum int) error {
+// UpdateGame saves the new board, turn, winner, status, move_num, and scores.
+func UpdateGame(database *sqlx.DB, id string, b game.Board, turn, winner, status string, moveNum, whiteScore, blackScore int) error {
 	boardJSON, err := json.Marshal(b)
 	if err != nil {
 		return fmt.Errorf("marshal board: %w", err)
@@ -172,8 +178,8 @@ func UpdateGame(database *sqlx.DB, id string, b game.Board, turn, winner, status
 		winnerVal = sql.NullString{String: winner, Valid: true}
 	}
 	_, err = database.Exec(
-		`UPDATE games SET board=?, turn=?, winner=?, status=?, move_num=? WHERE id=?`,
-		boardJSON, turn, winnerVal, status, moveNum, id,
+		`UPDATE games SET board=?, turn=?, winner=?, status=?, move_num=?, white_score=?, black_score=? WHERE id=?`,
+		boardJSON, turn, winnerVal, status, moveNum, whiteScore, blackScore, id,
 	)
 	return err
 }

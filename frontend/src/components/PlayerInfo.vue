@@ -15,10 +15,11 @@
           {{ name }}
         </div>
         <div class="text-caption text-medium-emphasis">
-          {{ color === 'white' ? 'White' : 'Black' }} · {{ moveCount }} move{{ moveCount !== 1 ? 's' : '' }}
+          {{ color === 'white' ? 'White' : 'Black' }} · <span class="score-value">{{ score }} pts</span>
         </div>
       </div>
       <v-spacer />
+      <span v-if="lastMoveScore > 0" class="last-move-score">+{{ lastMoveScore }}</span>
       <span v-if="isActive" class="led-green" />
     </div>
   </v-card>
@@ -28,7 +29,8 @@
 defineProps<{
   name: string
   color: 'white' | 'black'
-  moveCount: number
+  score: number
+  lastMoveScore: number
   isActive: boolean
 }>()
 </script>
@@ -56,6 +58,20 @@ defineProps<{
 }
 .player-dot.white { background: #f5f5f5; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 .player-dot.black { background: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.score-value {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #c77dff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.last-move-score {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4caf50;
+  margin-right: 8px;
+}
 .led-green {
   display: inline-block;
   width: 12px;

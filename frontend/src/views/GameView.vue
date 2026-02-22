@@ -70,7 +70,8 @@
                 class="mb-3"
                 :name="blackDisplayName"
                 color="black"
-                :move-count="blackMoves"
+                :score="blackMoves"
+                :last-move-score="lastBlackMoveScore"
                 :is-active="gameStore.turn === 'black'"
               />
 
@@ -95,7 +96,8 @@
                 class="mt-3"
                 :name="gameStore.state?.white_nick || playerStore.nickname"
                 color="white"
-                :move-count="playerStore.moveCount"
+                :score="playerStore.totalScore"
+                :last-move-score="lastWhiteMoveScore"
                 :is-active="gameStore.turn === 'white'"
               />
 
@@ -132,6 +134,7 @@ import PlayerInfo from '@/components/PlayerInfo.vue'
 import WinDialog from '@/components/WinDialog.vue'
 import { useGameStore } from '@/stores/game'
 import { usePlayerStore } from '@/stores/player'
+import { calculateMoveScore } from '@/utils/score'
 
 const route = useRoute()
 const gameStore = useGameStore()
@@ -149,11 +152,7 @@ const blackDisplayName = computed(() => {
   return gameStore.state.black_nick || 'AI'
 })
 
-// Count moves from move_num split between players.
-const blackMoves = computed(() => {
-  if (!gameStore.state) return 0
-  return Math.floor(gameStore.state.move_num / 2)
-})
+const blackMoves = computed(() => playerStore.aiScore)
 
 const isMyTurn = computed(() => {
   if (gameStore.status !== 'in_progress') return false
@@ -165,6 +164,24 @@ function toggleMute() {
   muted.value = !muted.value
   localStorage.setItem('sound_muted', String(muted.value))
 }
+
+const lastWhiteMoveScore = ref(0)
+const lastBlackMoveScore = ref(0)
+
+// Sync scores from backend state whenever it changes (WS move_made updates, etc.).
+// Does not run immediately — onMounted handles the initial load.
+watch(() => gameStore.state?.white_score, (val, prev) => {
+  if (val !== undefined) {
+    playerStore.totalScore = val
+    if (prev !== undefined && val > prev) lastWhiteMoveScore.value = val - prev
+  }
+})
+watch(() => gameStore.state?.black_score, (val, prev) => {
+  if (val !== undefined) {
+    playerStore.aiScore = val
+    if (prev !== undefined && val > prev) lastBlackMoveScore.value = val - prev
+  }
+})
 
 const turnSound = new Audio('/turn.wav')
 watch(() => gameStore.state?.move_num, (val, prev) => {
@@ -183,6 +200,11 @@ onMounted(async () => {
       ? (myColor.value === 'white' ? gameStore.state.white_nick : gameStore.state.black_nick ?? '')
       : gameStore.state.white_nick
     playerStore.setPlayer(nick, myColor.value)
+  }
+  // Restore scores from backend (setPlayer resets them to 0, so this must come after).
+  if (gameStore.state) {
+    playerStore.totalScore = gameStore.state.white_score
+    playerStore.aiScore = gameStore.state.black_score
   }
   if (gameStore.state?.mode === 'multiplayer') {
     gameStore.restoreLastMoveHighlight(playerStore.color)
@@ -211,9 +233,16 @@ function onPathExtended(newPath: string[]) {
 async function onMoveCommit(from: string, path: string[]) {
   if (gameStore.state?.mode === 'multiplayer') {
     gameStore.submitMoveWS(from, path)
+    // Immediate local feedback routed to the correct player slot.
+    if (playerStore.color === 'white') {
+      playerStore.addScore(calculateMoveScore(from, path))
+    } else {
+      playerStore.addAiScore(calculateMoveScore(from, path))
+    }
   } else {
     await gameStore.submitMove(gameId.value, from, path)
+    playerStore.totalScore = gameStore.state?.white_score ?? playerStore.totalScore
+    playerStore.aiScore = gameStore.state?.black_score ?? playerStore.aiScore
   }
-  playerStore.incrementMoves()
 }
 </script>

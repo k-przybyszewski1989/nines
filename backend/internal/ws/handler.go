@@ -167,11 +167,16 @@ func handleMakeMove(c *Client, h *Hub, database *sqlx.DB, payload json.RawMessag
 
 	gs.Board = game.ApplyMove(gs.Board, fromPos, path)
 	gs.MoveNum++
+	if c.color == "white" {
+		gs.WhiteScore += game.CalculateMoveScore(req.From, req.Path)
+	} else {
+		gs.BlackScore += game.CalculateMoveScore(req.From, req.Path)
+	}
 	_ = db.RecordMove(database, h.gameID, c.color, gs.MoveNum, req.From, req.Path)
 
 	if winner, ok := game.CheckWin(gs.Board); ok {
 		winStr := winner.String()
-		_ = db.UpdateGame(database, h.gameID, gs.Board, gs.Turn, winStr, "finished", gs.MoveNum)
+		_ = db.UpdateGame(database, h.gameID, gs.Board, gs.Turn, winStr, "finished", gs.MoveNum, gs.WhiteScore, gs.BlackScore)
 		gs.Winner = winStr
 		gs.Status = "finished"
 		if msg, err := encodeMsg("game_over", map[string]string{"winner": winStr}); err == nil {
@@ -186,7 +191,7 @@ func handleMakeMove(c *Client, h *Hub, database *sqlx.DB, payload json.RawMessag
 	} else {
 		gs.Turn = "white"
 	}
-	_ = db.UpdateGame(database, h.gameID, gs.Board, gs.Turn, "", gs.Status, gs.MoveNum)
+	_ = db.UpdateGame(database, h.gameID, gs.Board, gs.Turn, "", gs.Status, gs.MoveNum, gs.WhiteScore, gs.BlackScore)
 
 	payload2, _ := json.Marshal(map[string]any{
 		"from":   req.From,

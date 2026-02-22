@@ -23,6 +23,8 @@ export interface GameState {
   winner?: string
   board: string[][]
   move_num: number
+  white_score: number
+  black_score: number
   last_move?: LastMove
   created_at: string
   updated_at: string

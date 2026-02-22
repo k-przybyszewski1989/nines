@@ -194,13 +194,14 @@ func (h *Handler) MakeMove(c *gin.Context) {
 	// Apply human move.
 	gs.Board = game.ApplyMove(gs.Board, fromPos, path)
 	gs.MoveNum++
+	gs.WhiteScore += game.CalculateMoveScore(req.From, req.Path)
 
 	// Record human move.
 	_ = db.RecordMove(h.DB, id, "white", gs.MoveNum, req.From, req.Path)
 
 	// Check if human won.
 	if winner, ok := game.CheckWin(gs.Board); ok {
-		_ = db.UpdateGame(h.DB, id, gs.Board, "black", winner.String(), "finished", gs.MoveNum)
+		_ = db.UpdateGame(h.DB, id, gs.Board, "black", winner.String(), "finished", gs.MoveNum, gs.WhiteScore, gs.BlackScore)
 		gs.Turn = "black"
 		gs.Winner = winner.String()
 		gs.Status = "finished"
@@ -218,10 +219,11 @@ func (h *Handler) MakeMove(c *gin.Context) {
 		}
 		gs.Board = game.ApplyMove(gs.Board, aiMove.From, aiMove.Path)
 		gs.MoveNum++
+		gs.BlackScore += game.CalculateMoveScore(aiMove.From.String(), aiPath)
 		_ = db.RecordMove(h.DB, id, "black", gs.MoveNum, aiMove.From.String(), aiPath)
 
 		if winner, ok2 := game.CheckWin(gs.Board); ok2 {
-			_ = db.UpdateGame(h.DB, id, gs.Board, "white", winner.String(), "finished", gs.MoveNum)
+			_ = db.UpdateGame(h.DB, id, gs.Board, "white", winner.String(), "finished", gs.MoveNum, gs.WhiteScore, gs.BlackScore)
 			gs.Turn = "white"
 			gs.Winner = winner.String()
 			gs.Status = "finished"
@@ -232,7 +234,7 @@ func (h *Handler) MakeMove(c *gin.Context) {
 	// After AI move, it's White's turn again.
 	gs.Turn = "white"
 
-	_ = db.UpdateGame(h.DB, id, gs.Board, gs.Turn, "", gs.Status, gs.MoveNum)
+	_ = db.UpdateGame(h.DB, id, gs.Board, gs.Turn, "", gs.Status, gs.MoveNum, gs.WhiteScore, gs.BlackScore)
 	c.JSON(http.StatusOK, gs)
 }
 

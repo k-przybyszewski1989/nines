@@ -67,5 +67,14 @@ CREATE TABLE IF NOT EXISTS moves (
 	if err != nil {
 		return fmt.Errorf("create moves table: %w", err)
 	}
+
+	_, err = database.Exec(`ALTER TABLE games ADD COLUMN IF NOT EXISTS white_score INT NOT NULL DEFAULT 0`)
+	if err != nil {
+		return fmt.Errorf("alter games add white_score: %w", err)
+	}
+	_, err = database.Exec(`ALTER TABLE games ADD COLUMN IF NOT EXISTS black_score INT NOT NULL DEFAULT 0`)
+	if err != nil {
+		return fmt.Errorf("alter games add black_score: %w", err)
+	}
 	return nil
 }

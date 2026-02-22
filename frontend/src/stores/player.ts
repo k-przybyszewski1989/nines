@@ -4,23 +4,30 @@ import { ref } from 'vue'
 export const usePlayerStore = defineStore('player', () => {
   const nickname = ref('')
   const color = ref<'white' | 'black' | ''>('')
-  const moveCount = ref(0)
+  const totalScore = ref(0)
+  const aiScore = ref(0)
 
   function setPlayer(nick: string, c: 'white' | 'black') {
     nickname.value = nick
     color.value = c
-    moveCount.value = 0
+    totalScore.value = 0
+    aiScore.value = 0
   }
 
-  function incrementMoves() {
-    moveCount.value++
+  function addScore(points: number) {
+    totalScore.value += points
+  }
+
+  function addAiScore(points: number) {
+    aiScore.value += points
   }
 
   function reset() {
     nickname.value = ''
     color.value = ''
-    moveCount.value = 0
+    totalScore.value = 0
+    aiScore.value = 0
   }
 
-  return { nickname, color, moveCount, setPlayer, incrementMoves, reset }
+  return { nickname, color, totalScore, aiScore, setPlayer, addScore, addAiScore, reset }
 })
