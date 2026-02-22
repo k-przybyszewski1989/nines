@@ -133,19 +133,26 @@ const router = useRouter()
 const gameStore = useGameStore()
 const playerStore = usePlayerStore()
 
-const nickname = ref('')
+const NICK_KEY = 'nines_nickname'
+const nickname = ref(localStorage.getItem(NICK_KEY) ?? '')
 const step = ref<'mode' | 'difficulty'>('mode')
 const aiLevel = ref('')
 const loading = ref(false)
 const error = ref('')
 
+function saveNick() {
+  localStorage.setItem(NICK_KEY, nickname.value.trim())
+}
+
 function goMultiplayer() {
   if (!nickname.value.trim()) return
+  saveNick()
   router.push({ name: 'lobby', query: { nickname: nickname.value.trim() } })
 }
 
 async function startGame(level: string) {
   if (!nickname.value.trim()) return
+  saveNick()
   aiLevel.value = level
   loading.value = true
   error.value = ''
